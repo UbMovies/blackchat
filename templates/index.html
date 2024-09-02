@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Black Chat</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c2c2c;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #ffffff;
+            margin-left: 460px;
+        }
+        .note{
+            color: red;
+            margin-left: 400px;
+        }
+        input[type="text"] {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: none;
+            width: calc(100% - 22px);
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #messages {
+            margin-top: 20px;
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #333;
+            border-radius: 5px;
+        }
+       
+        .sender {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Black Chat</h1>
+    <p class="note">Note: Try To Use VPN. It's Good For Your Safety. Thanks!</p>
+    <input id="messageInput" type="text" placeholder="Type a message..."/>
+    <input id="senderInput" type="text" placeholder="Your name..." oninput="convertToLowercase()"/>
+    <button onclick="sendMessage()">Send</button>
+    <div id="messages"></div>
+    <p class="encryption-note">We can't see your message because your message isn't saved on our database and is in encrypted form. We can't see the encrypted message; we see only random numbers.<br>
+    random_number=encryptedMessage;
+    </p>
+
+
+<script >
+
+
+    
+function convertToLowercase() {
+        let senderInput = document.getElementById('senderInput');
+        senderInput.value = senderInput.value.toLowerCase();
+    }
+        const socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        
+        const key = '1100c1011145e4f';  
+        
+        function encryptMessage(message, sender) {
+            
+        
+            const messageWithSender = `${sender}:${message}`;
+            return CryptoJS.AES.encrypt(messageWithSender, key).toString();
+        }
+
+        
+        function decryptMessage(encryptedMessage) {
+            const bytes = CryptoJS.AES.decrypt(encryptedMessage, key);
+            return bytes.toString(CryptoJS.enc.Utf8);
+        }
+
+        
+        socket.on('message', function(data) {
+            const decryptedMessage = decryptMessage(data.message);
+            const [sender, message] = decryptedMessage.split(':');
+
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            
+            const senderDiv = document.createElement('div');
+            senderDiv.classList.add('sender');
+            senderDiv.textContent = sender + ':';
+            
+            const messageContentDiv = document.createElement('div');
+            messageContentDiv.textContent = message;
+            
+            messageDiv.appendChild(senderDiv);
+            messageDiv.appendChild(messageContentDiv);
+            
+            document.getElementById('messages').appendChild(messageDiv);
+        });
+
+        
+        function sendMessage() {
+            const message = document.getElementById('messageInput').value;
+            const sender = document.getElementById('senderInput').value || 'Anonymous';
+            
+            
+            const encryptedMessage = encryptMessage(message, sender);
+            socket.send({ message: encryptedMessage, sender });
+            document.getElementById('messageInput').value = '';
+        }
+    
+</script>
+   
+</body>
+</html>
