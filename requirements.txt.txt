@@ -1,0 +1,4 @@
+pip freeze 
+pip install Flask Flask-SocketIO
+pip install gunicorn
+
